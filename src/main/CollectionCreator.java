@@ -11,13 +11,13 @@ import utils.ProcessHelper;
 
 import java.io.BufferedReader;
 
-public class CreateCollection {
+public class CollectionCreator {
 
     private JsonArray jsonArray;
     private ProcessBuilder processBuilder;
     private String currentContainerName;
 
-    public CreateCollection(){
+    public CollectionCreator(){
         jsonArray = JsonReader.getInstance().getJsonArray();
         processBuilder = new ProcessBuilder();
     }
@@ -64,7 +64,7 @@ public class CreateCollection {
             case "CMAKE":
                 System.out.println("Starting cmake docker");
                 currentContainerName = "cmake";
-                processBuilder.command("bash", "-c", "docker run --name=cmake -v "+ Config.HOSTPATH + ":" + Config.CONTAINERPATH + " --entrypoint '/bin/bash' conan-cmake:clang -c 'cd /Program && java -jar ContainerProgram.jar " + arrayIndex+ "'");
+                processBuilder.command("bash", "-c", "docker run --name=cmake -v "+ Config.HOSTPATH + ":" + Config.CONTAINERPATH + " --entrypoint '/bin/bash' conan-cmake:clang -c 'cd /Program && java -jar ContainerCoordinator.jar " + arrayIndex+ "'");
                 break;
         }
         dockerRun(rMetaData, arrayIndex);

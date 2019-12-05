@@ -4,24 +4,24 @@ package main;
  *
  * @author Daniel Braun
  */
-public class MainCreateCollection {
+public class MainCollectionCreator {
 
     public static void main(String[] args) {
         if(args.length == 0){
-            System.out.println("Starting create collection for all repositories inside repositories.json");
+            System.out.println("Starting collection creation for all repositories inside repositories.json");
             //Init crawler with configuration.
-            CreateCollection createCollection = new CreateCollection();
+            CollectionCreator collectionCreator = new CollectionCreator();
             //Start the crawler.
-            createCollection.run();
+            collectionCreator.run();
         } else if (args.length == 1) {
             try {
                 int arrayIndex = Integer.parseInt(args[0]);
                 if(arrayIndex >= 0) {
-                    System.out.println("Starting create collection for repository at index "+arrayIndex+".");
+                    System.out.println("Starting collection creation for repository at index "+arrayIndex+".");
                     //Init crawler with configuration.
-                    CreateCollection createCollection = new CreateCollection();
+                    CollectionCreator collectionCreator = new CollectionCreator();
                     //Start the crawler.
-                    createCollection.runByIndex(arrayIndex);
+                    collectionCreator.runByIndex(arrayIndex);
                 } else {
                     System.err.println("Number must be greater or equals 0.");
                     System.err.println("Aborting.");
