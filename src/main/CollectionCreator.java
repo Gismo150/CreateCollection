@@ -10,14 +10,26 @@ import utils.JsonReader;
 import utils.ProcessHelper;
 
 import java.io.BufferedReader;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 public class CollectionCreator {
 
     private JsonArray jsonArray;
     private ProcessBuilder processBuilder;
     private String currentContainerName;
+    private long startTime;
+    private String systemStartTime;
+    private int counterSuccess;
+    private int counterFailed;
+    private Logger logger;
 
-    public CollectionCreator(){
+    public CollectionCreator(Logger logger, long startTime, String systemStartTime){
+        this.logger = logger;
+        this.startTime = startTime;
+        this.systemStartTime = systemStartTime;
         jsonArray = JsonReader.getInstance().getJsonArray();
         processBuilder = new ProcessBuilder();
     }
@@ -30,11 +42,37 @@ public class CollectionCreator {
             if(!rMetaData.getBuildStatus().equals("UNKNOWN")) {
                 System.out.println("Repository at index " + i + " was already processed with build status: " + rMetaData.getBuildStatus() + "\nSkipping to the next repository.");
             } else {
+                logger.info("-----------------------------------");
+                logger.info("Running collection creation at index: "+ i + "for repository with id/owner/name: " + rMetaData.getId() + "/" + rMetaData.getOwner() + "/" + rMetaData.getName());
+                long startTimeDockerExe   = System.nanoTime();
                 initDockerCommand(rMetaData, i); // could use multithreading at this point, however the json reader/writer must be thread safe first!
+                long endTimeDockerExe   = System.nanoTime();
+                long durationDockerExe = endTimeDockerExe - startTimeDockerExe;
+                logger.info("Overall execution time in seconds: " + TimeUnit.NANOSECONDS.toSeconds(durationDockerExe));
+                logger.info("Overall execution time in minutes: " + (double)TimeUnit.NANOSECONDS.toSeconds(durationDockerExe)/60);
             }
         }
-        System.out.println("---------------------------------------");
         ElasticsearchConnector.getInstance().closeClient(); // Free all resource of the ElasticsearchConnector
+
+        //TODO: log here all other data that is known to the end
+        logger.info("-----------------------------------");
+        logger.info("Number of build successes: " + counterSuccess);
+        logger.info("Number of build failures: " + counterFailed);
+
+        Calendar calendar = Calendar.getInstance();
+        SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+        long endTime   = System.nanoTime();
+        long duration = endTime - startTime;
+
+        logger.info("-----------------------------------");
+        logger.info("CollectionCreator started at: " + systemStartTime);
+        logger.info("CollectionCreator terminated at: " + formatter.format(calendar.getTime()));
+        logger.info("Overall execution time in seconds: " + TimeUnit.NANOSECONDS.toSeconds(duration));
+        logger.info("Overall execution time in minutes: " + (double)TimeUnit.NANOSECONDS.toSeconds(duration)/60);
+        logger.info("Overall execution time in hours: " + (double)TimeUnit.NANOSECONDS.toSeconds(duration)/3600);
+        logger.info("CollectionCreator finished. Processed all repositories of json file. Shutting down");
+
+        System.out.println("---------------------------------------");
         System.out.println("Finished collection creation.\nProcessed all repositories of json file.");
     }
 
@@ -59,7 +97,7 @@ public class CollectionCreator {
         // Run a command
         //processBuilder.command("cmd.exe", "/c", "COMMAND");
 
-        // Using a switch statement for future easier extension with further build systems
+        // Using a switch statement for future easier extension with other build systems
         switch (rMetaData.getBuildSystem()){
             case "CMAKE":
                 System.out.println("Starting cmake docker");
@@ -79,8 +117,16 @@ public class CollectionCreator {
         } else {
             //abnormal behaviour...
             dockerFailed(exitVal);
+            logger.severe("Docker crashed with exit code: " + exitVal + " for repository at index: " + arrayIndex);
             cleanSharedDir();
         }
+
+
+        RMetaData rMetaDataUpdated = JsonReader.getInstance().deserializeRepositoryFromJsonArray(arrayIndex);
+        if(rMetaDataUpdated.getBuildStatus().equals("SUCCESS"))
+            counterSuccess++;
+        else if (rMetaDataUpdated.getBuildStatus().equals("FAILED"))
+            counterFailed++;
     }
 
     private void dockerSuccess(int exitVal, int arrayIndex) {
