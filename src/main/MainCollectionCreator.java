@@ -1,4 +1,13 @@
 package main;
+
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.logging.FileHandler;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
  * Main entry point of the whole program
  *
@@ -7,10 +16,35 @@ package main;
 public class MainCollectionCreator {
 
     public static void main(String[] args) {
+        Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
+        logger.setLevel(Level.ALL);
+        Handler handler = null;
+        try {
+            handler = new FileHandler(Config.FILEPATH + "/CollectionCreator_Log.xml", true);
+            handler.setLevel(Level.ALL);
+            logger.addHandler(handler);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        logger.setUseParentHandlers(false);
+        logger.config("CONFIGURATION:");
+        logger.config("Filepath: " + Config.FILEPATH);
+        logger.config("Host path: " + Config.HOSTPATH);
+        logger.config("Container path: " + Config.CONTAINERPATH);
+        logger.config("repositories.json is output to: " + Config.FILEPATH + "/" + Config.JSONFILENAME);
+        logger.config("results.json is read from: " + Config.FILEPATH + "/" + Config.RESULTFILENAME);
+
+        Calendar calendar = Calendar.getInstance();
+        SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+        String systemStartTime = formatter.format(calendar.getTime());
+        long startTime = System.nanoTime();
+
+
+
         if(args.length == 0){
             System.out.println("Starting collection creation for all repositories inside repositories.json");
             //Init crawler with configuration.
-            CollectionCreator collectionCreator = new CollectionCreator();
+            CollectionCreator collectionCreator = new CollectionCreator(logger, startTime, systemStartTime);
             //Start the crawler.
             collectionCreator.run();
         } else if (args.length == 1) {
@@ -19,7 +53,7 @@ public class MainCollectionCreator {
                 if(arrayIndex >= 0) {
                     System.out.println("Starting collection creation for repository at index "+arrayIndex+".");
                     //Init crawler with configuration.
-                    CollectionCreator collectionCreator = new CollectionCreator();
+                    CollectionCreator collectionCreator = new CollectionCreator(logger, startTime, systemStartTime);
                     //Start the crawler.
                     collectionCreator.runByIndex(arrayIndex);
                 } else {
