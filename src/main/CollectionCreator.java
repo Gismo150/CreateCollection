@@ -55,7 +55,7 @@ public class CollectionCreator {
         ElasticsearchConnector.getInstance().closeClient(); // Free all resource of the ElasticsearchConnector
 
         //TODO: log here all other data that is known to the end
-        logger.info("-----------------------------------");
+        /*logger.info("-----------------------------------");
         logger.info("Number of build successes: " + counterSuccess);
         logger.info("Number of build failures: " + counterFailed);
 
@@ -70,7 +70,7 @@ public class CollectionCreator {
         logger.info("Overall execution time in seconds: " + TimeUnit.NANOSECONDS.toSeconds(duration));
         logger.info("Overall execution time in minutes: " + (double)TimeUnit.NANOSECONDS.toSeconds(duration)/60);
         logger.info("Overall execution time in hours: " + (double)TimeUnit.NANOSECONDS.toSeconds(duration)/3600);
-        logger.info("CollectionCreator finished. Processed all repositories of json file. Shutting down");
+        logger.info("CollectionCreator finished. Processed all repositories of json file. Shutting down");*/
 
         System.out.println("---------------------------------------");
         System.out.println("Finished collection creation.\nProcessed all repositories of json file.");
