@@ -17,6 +17,10 @@ import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.rest.RestStatus;
 import java.io.IOException;
 
+/**
+ * The Elasticsearch connector provided as a singleton class that connects to the running database on localhost:9200.
+ * @author Daniel Braun.
+ */
 public class ElasticsearchConnector {
 
 
@@ -46,6 +50,11 @@ public class ElasticsearchConnector {
     }
 
 
+    /**
+     * Main function to index the collected information of a repository into the Elasticsearch database.
+     * @param arrayIndex The index of the repository within the repositories.json file.
+     * @param containerInfo The docker container low level information.
+     */
     public void indexRepository (int arrayIndex, JsonArray containerInfo) {
         //Get the deserialized updated metadata
         RMetaData rMetaData = JsonReader.getInstance().deserializeRepositoryFromJsonArray(arrayIndex);
@@ -77,6 +86,10 @@ public class ElasticsearchConnector {
         }
     }
 
+    /**
+     * Handles the response of the elasticsearch server when indexing JSON strings.
+     * @param indexResponse The response object from the server.
+     */
     private void indexResponseHandler (IndexResponse indexResponse) {
         System.out.println("INDEX SUMMARY:");
         // Index name
@@ -111,6 +124,9 @@ public class ElasticsearchConnector {
         System.out.println("---------------------------------------");
     }
 
+    /**
+     * Closes the client connection to the elasticsearch database.
+     */
     public void closeClient() {
         try {
             client.close();
