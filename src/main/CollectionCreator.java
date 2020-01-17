@@ -15,6 +15,11 @@ import java.util.Calendar;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
+/**
+ * The CollectionCreator class that is responsible for the collection creation and storage of all information collected
+ * into the Elasticsearch database.
+ * @author Daniel Braun
+ */
 public class CollectionCreator {
 
     private JsonArray jsonArray;
@@ -34,6 +39,10 @@ public class CollectionCreator {
         processBuilder = new ProcessBuilder();
     }
 
+    /**
+     * Main entry function that must be called to start the collection creation process.
+     * It will instantiate docker containers sequentially for each repository within the repositories.json file.
+     */
     public void run() {
         for(int i = 0; i < jsonArray.size(); i++){
             RMetaData rMetaData = JsonReader.getInstance().deserializeRepositoryFromJsonArray(i);
@@ -54,8 +63,8 @@ public class CollectionCreator {
         }
         ElasticsearchConnector.getInstance().closeClient(); // Free all resource of the ElasticsearchConnector
 
-        //TODO: log here all other data that is known to the end
-        /*logger.info("-----------------------------------");
+
+        logger.info("-----------------------------------");
         logger.info("Number of build successes: " + counterSuccess);
         logger.info("Number of build failures: " + counterFailed);
 
@@ -70,12 +79,16 @@ public class CollectionCreator {
         logger.info("Overall execution time in seconds: " + TimeUnit.NANOSECONDS.toSeconds(duration));
         logger.info("Overall execution time in minutes: " + (double)TimeUnit.NANOSECONDS.toSeconds(duration)/60);
         logger.info("Overall execution time in hours: " + (double)TimeUnit.NANOSECONDS.toSeconds(duration)/3600);
-        logger.info("CollectionCreator finished. Processed all repositories of json file. Shutting down");*/
+        logger.info("CollectionCreator finished. Processed all repositories of json file. Shutting down");
 
         System.out.println("---------------------------------------");
         System.out.println("Finished collection creation.\nProcessed all repositories of json file.");
     }
 
+    /**
+     * Main entry function used to run the collection creation process only for one specific repository at the given index.
+     * @param arrayIndex The index to the repository within the repositories.json file.
+     */
     public void runByIndex(int arrayIndex) {
         JsonReader.getInstance().checkArgInRange(arrayIndex);
 
@@ -88,6 +101,11 @@ public class CollectionCreator {
         System.out.println("Finished collection creation for repository at index "+arrayIndex+".");
     }
 
+    /**
+     * Initializes the docker run command.
+     * @param rMetaData The metadata read from the json file.
+     * @param arrayIndex The index within the repositories.json file of the repository.
+     */
     private void initDockerCommand(RMetaData rMetaData, int arrayIndex){
 
         // -- Linux --
@@ -108,6 +126,11 @@ public class CollectionCreator {
         dockerRun(rMetaData, arrayIndex);
     }
 
+    /**
+     * Starts a new docker container and inherits its stdout and stderr streams.
+     * @param rMetaData The metadata read from the json file.
+     * @param arrayIndex The index within the repositories.json file of the repository.
+     */
     private void dockerRun(RMetaData rMetaData, int arrayIndex) {
         int exitVal = ProcessHelper.executeProcess(processBuilder);
 
@@ -129,17 +152,30 @@ public class CollectionCreator {
             counterFailed++;
     }
 
+    /**
+     * Function to call when the docker exited without internal errors.
+     * @param exitVal The exit code of the docker container process.
+     * @param arrayIndex The index within the repositories.json file of the repository.
+     */
     private void dockerSuccess(int exitVal, int arrayIndex) {
         System.out.println("Docker exited with status: " + exitVal);
         ElasticsearchConnector.getInstance().indexRepository(arrayIndex, getContainerInfo());
     }
 
+    /**
+     * Function to call when the docker exited with internal errors.
+     * @param exitVal The exit code of the docker container process.
+     */
     private  void dockerFailed(int exitVal) {
         System.err.println("Internal docker error");
         System.err.println("Docker exited with status: " + exitVal);
         System.out.println("Continuing with next repository.");
     }
 
+    /**
+     * Collects the docker container low level information and returns it as an JsonArray.
+     * @return The JsonArray returned by the docker inspect command.
+     */
     private JsonArray getContainerInfo() {
         ProcessBuilder processBuilder = new ProcessBuilder();
         StringBuilder containerInfo = new StringBuilder();
@@ -151,12 +187,20 @@ public class CollectionCreator {
         return containerObj.getAsJsonArray();
     }
 
+    /**
+     * Function to remove the exited docker container by its name. Required to be able to restart another docker container
+     * with the same name.
+     * @param containerName The docker container's name to remove.
+     */
     private void dockerRemove(String containerName) {
         System.out.println("Removing container instance:");
         processBuilder.command("bash", "-c", "docker rm " + containerName);
         ProcessHelper.executeProcess(processBuilder);
     }
 
+    /**
+     * Deletes the results.json file within the specified shared folder.
+     */
     private void cleanSharedDir() {
         processBuilder.command("bash", "-c", "cd " + Config.HOSTPATH + " && rm -f -r ./results.json");
         int exitVal1 = ProcessHelper.executeProcess(processBuilder);
