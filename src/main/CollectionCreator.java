@@ -136,12 +136,14 @@ public class CollectionCreator {
 
         if (exitVal == 0) {
             dockerSuccess(exitVal, arrayIndex);
-            cleanSharedDir();
+            deleteResultsJSONFile();
+            deleteRepositoryFolder(rMetaData);
         } else {
             //abnormal behaviour...
             dockerFailed(exitVal);
             logger.severe("Docker crashed with exit code: " + exitVal + " for repository at index: " + arrayIndex);
-            cleanSharedDir();
+            deleteResultsJSONFile();
+            deleteRepositoryFolder(rMetaData);
         }
 
 
@@ -201,7 +203,7 @@ public class CollectionCreator {
     /**
      * Deletes the results.json file within the specified shared folder.
      */
-    private void cleanSharedDir() {
+    private void deleteResultsJSONFile() {
         processBuilder.command("bash", "-c", "cd " + Config.HOSTPATH + " && rm -f -r ./results.json");
         int exitVal1 = ProcessHelper.executeProcess(processBuilder);
         if (exitVal1 == 0) {
@@ -209,6 +211,23 @@ public class CollectionCreator {
         } else {
             System.err.println("Failed to delete results.json file!");
         }
+    }
+
+    /**
+     * Deletes the cloned repository.
+     * @param rMetaData The metadata read from the json
+     */
+    private void deleteRepositoryFolder(RMetaData rMetaData) {
+        System.out.println("----------------------------------------------------");
+        processBuilder.command("bash", "-c", "cd " + Config.HOSTPATH + " && rm -f -r ./" + rMetaData.getName());
+
+        int exitVal1 = ProcessHelper.executeProcess(processBuilder);
+        if (exitVal1 == 0) {
+            System.out.println("Repository has been deleted!");
+        } else {
+            System.err.println("Failed to delete repository!");
+        }
+        System.out.println("----------------------------------------------------");
     }
 
 }
